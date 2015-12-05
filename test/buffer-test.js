@@ -14,23 +14,31 @@ test('Buffer: should buffer bursts', function (t) {
   var scheduler = new Rx.TestScheduler();
 
   var input = scheduler.createHotObservable(
-    onNext(200, {'a': 'z'}),
+    onNext(201, {'a': 'z'}),
     onNext(210, {'b': 'b'}),
     onNext(220, {'a': 'a'}),
-    onCompleted(500)
+    onNext(300, {'a2': 'z'}),
+    onNext(310, {'b': 'b'}),
+    onNext(320, {'a': 'a'})
   );
+  var stop = input.debounce(20, scheduler);
 
   var results = scheduler.startScheduler(function () {
-      return input.buffer(function () {return  input.debounce(20, scheduler)})
+      return input.buffer(() => stop)
       .map(function (arr) {
-        var obj = Im.fromJS({});
-        arr.map(item => obj = obj.mergeDeep(item))
+        var obj = {};
+        arr.map(item => obj = Object.assign(obj, item));
         return obj;
       });
+    },
+    {
+      created: 50,
+      subscribed: 150,
+      disposed: 600
     }
   );
   rxEqual(t, results.messages, [
-      onNext(140, Im.fromJS({'a': 'a', 'b':'b'})),
-      onCompleted(500)
+      onNext(240, {'a': 'a', 'b':'b'}),
+      onNext(340, {'a': 'a', 'a2':'z', 'b':'b'})
     ]);
 });

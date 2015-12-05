@@ -1,6 +1,6 @@
 'use strict';
 
-var isEqual = require('Rx').internals.isEqual;
+var rxEqual = require('Rx').internals.isEqual;
 
 function createMessage(actual, expected) {
   return 'Expected: [' + expected.toString() + '] Actual: [' + actual.toString() + ']';
@@ -16,8 +16,9 @@ module.exports = function assertEqual (t, actual, expected) {
     // ALlow for predicates
     if (e.value && typeof e.value.predicate === 'function') {
       isOk = e.time === a.time && e.value.predicate(a.value);
-    } else {
-      isOk = isEqual(e, a);
+    }
+    else {
+      isOk = rxEqual(e, a);
     }
 
     if (!isOk) {
