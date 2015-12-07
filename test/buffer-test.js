@@ -30,11 +30,6 @@ test('Buffer: should buffer bursts', function (t) {
         arr.map(item => obj = Object.assign(obj, item));
         return obj;
       });
-    },
-    {
-      created: 50,
-      subscribed: 150,
-      disposed: 600
     }
   );
   rxEqual(t, results.messages, [
