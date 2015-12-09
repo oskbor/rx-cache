@@ -6,15 +6,15 @@ const Rx = require('rx'),
 module.exports = class Cache {
 
   constructor (options) {
-    options = Object.assign({optimistic: true, buffer: true}, options);
+    this.options = Object.assign({optimistic: true, buffer: 20}, options);
     if (initial) {
       this.updates = new Rx.BehaviorSubject(Im.fromJS(initial));
     }
     else {
       this.updates = new Rx.Subject();
     }
-    this.getRequests = new Rx.Subject();
-    this.setRequests = new Rx.Subject();
+    this._setReqSubject = new Rx.Subject();
+    this._getReqSubject = new Rx.Subject();
     this.asObservable = this.updates
       .scan(
         (state, operation) => operation(state),
@@ -35,7 +35,7 @@ module.exports = class Cache {
           }
         }
         if (missingKeys.length > 0) {
-          this.getRequests.onNext(missingKeys);
+          this._getReqSubject.onNext(missingKeys);
           return false;
         }
         else return true;
@@ -48,19 +48,30 @@ module.exports = class Cache {
           keys.map(key => {
             let cacheValue = state.getIn(key.split('.'));
             map.setIn(requestedMap[key].split('.'), cacheValue);
-          }
-        }
-      ));
-    });
+          });
+        });
+      });
   }
 
   set (setMap) {
-    this.setRequests.onNext(setMap);
+    this._setReqSubject.onNext(setMap);
     if (this.optimistic) {
       updates.onNext(
         (state) => state.mergeDeep(setMap)
       );
     }
+  }
+  get setRequests () {
+    if(this.options.buffer) {
+      this._setReqSubject.buffer(() => this._setReqSubject.debounce(this.options.buffer));
+    }
+    else return this._setReqSubject;
+  }
+  get getRequests () {
+    if(this.options.buffer) {
+      this._getReqSubject.buffer(() => this._getReqSubject.debounce(this.options.buffer));
+    }
+    else return this._getReqSubject;
   }
 }
 
