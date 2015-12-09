@@ -7,7 +7,7 @@ module.exports = class Cache {
 
   constructor (options) {
     this.options = Object.assign({optimistic: true, buffer: 20}, options);
-    if (initial) {
+    if (this.options.initial) {
       this.updates = new Rx.BehaviorSubject(Im.fromJS(initial));
     }
     else {
@@ -18,7 +18,7 @@ module.exports = class Cache {
     this.asObservable = this.updates
       .scan(
         (state, operation) => operation(state),
-        Immutable.Map())
+        Im.Map())
       .distinctUntilChanged().shareReplay(1)
   }
 
@@ -28,7 +28,7 @@ module.exports = class Cache {
     // find out if all keys are in the cache
     return this.asObservable.filter(
       (state) => {
-        let missingKeys = Immutable.List()
+        let missingKeys = Im.List()
         for (let key in keys.map(key => key.split('.'))) {
           if (!state.hasIn(key)) {
             missingKeys.push(key);
@@ -43,7 +43,7 @@ module.exports = class Cache {
     ).map((state) => {
       // This function only fires when all keys are in the cache (because of filter)
       // return an object as described in the requestedMap
-      return Immutable.Map().withMutations(
+      return Im.Map().withMutations(
         (map) => {
           keys.map(key => {
             let cacheValue = state.getIn(key.split('.'));
@@ -63,13 +63,13 @@ module.exports = class Cache {
   }
   get setRequests () {
     if(this.options.buffer) {
-      this._setReqSubject.buffer(() => this._setReqSubject.debounce(this.options.buffer));
+      return this._setReqSubject.buffer(() => this._setReqSubject.debounce(this.options.buffer));
     }
     else return this._setReqSubject;
   }
   get getRequests () {
     if(this.options.buffer) {
-      this._getReqSubject.buffer(() => this._getReqSubject.debounce(this.options.buffer));
+      return this._getReqSubject.buffer(() => this._getReqSubject.debounce(this.options.buffer));
     }
     else return this._getReqSubject;
   }

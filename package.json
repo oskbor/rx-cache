@@ -4,7 +4,7 @@
   "description": "cache all the things",
   "main": "index.js",
   "scripts": {
-    "test": "node test/buffer-test.js | node_modules/.bin/tap-spec"
+    "test": "node test/cache-test.js | node_modules/.bin/tap-spec || true"
   },
   "author": "Oskar Börjesson",
   "license": "MIT",
