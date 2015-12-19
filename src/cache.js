@@ -13,32 +13,44 @@ module.exports = class Cache {
     else {
       this.updates = new Rx.Subject();
     }
-    this._setReqSubject = new Rx.Subject();
+    this._setReqSubject = new Rx.Subject(),
     this._getReqSubject = new Rx.Subject();
-    this.asObservable = this.updates
+    this.asObservable =
+      this.updates
       .scan(
-        (state, operation) => operation(state),
+        (state, operation) => {
+          console.log(state, operation);
+          return operation(state);
+        },
         Im.Map())
-      .distinctUntilChanged().shareReplay(1)
+      .startWith(Im.Map())
+      .shareReplay(1);
   }
 
   get (requestedMap) {
-    let keys = Object.keys(requestedMap);
+    let keys = Im.fromJS(Object.keys(requestedMap).map(key => key.split('.')));
 
+    this.asObservable.take(1).subscribe((state) => {
+      let missingKeys = Im.List();
+      for (let i = 0; i < keys.size; i++) {
+        if (!state.hasIn(keys.get(i))) {
+          //TODO: modify in transaction
+          missingKeys = missingKeys.push(keys.get(i));
+        }
+      }
+      if (missingKeys.size > 0) {
+        this._getReqSubject.onNext(missingKeys);
+      }
+    });
     // find out if all keys are in the cache
     return this.asObservable.filter(
       (state) => {
-        let missingKeys = Im.List()
-        for (let key in keys.map(key => key.split('.'))) {
+        for (let key in keys) {
           if (!state.hasIn(key)) {
-            missingKeys.push(key);
+            return false; //Still haven't all keys in the cache
           }
         }
-        if (missingKeys.length > 0) {
-          this._getReqSubject.onNext(missingKeys);
-          return false;
-        }
-        else return true;
+        return true;
       }
     ).map((state) => {
       // This function only fires when all keys are in the cache (because of filter)
@@ -50,7 +62,7 @@ module.exports = class Cache {
             map.setIn(requestedMap[key].split('.'), cacheValue);
           });
         });
-      });
+      }).publish();
   }
 
   set (setMap) {
@@ -69,7 +81,14 @@ module.exports = class Cache {
   }
   get getRequests () {
     if(this.options.buffer) {
-      return this._getReqSubject.buffer(() => this._getReqSubject.debounce(this.options.buffer));
+      return this._getReqSubject
+      .buffer(() => this._getReqSubject.debounce(this.options.buffer))
+      .map(arr => {
+        return Im.Set().withMutations(
+          s => arr.map(i => s.union(i))
+        );
+      });
+      ;
     }
     else return this._getReqSubject;
   }
