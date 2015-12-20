@@ -59,8 +59,8 @@ module.exports = class Cache {
 
   set (setMap) {
     this._setReqSubject.onNext(setMap);
-    if (this.optimistic) {
-      updates.onNext(
+    if (this.options.optimistic) {
+      this.updates.onNext(
         (state) => state.mergeDeep(setMap)
       );
     }
