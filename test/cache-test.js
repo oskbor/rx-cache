@@ -4,7 +4,6 @@ const test = require('tape'),
 
 test('Cache: should buffer bursts of get requests', function (assert) {
   assert.plan(2);
-  assert.timeoutAfter(100)
   var c = new Cache({buffer:1});
   let emits = 0;
   c.getRequests.subscribe((value) =>
@@ -33,4 +32,22 @@ test('Cache: should buffer bursts of get requests', function (assert) {
 setTimeout(() => {
   c.get({'d':'localD', 'e': 'localE'});
 }, 3);
+});
+
+test('Cache: should not emit any missing keys if they are already in the cache', function (assert) {
+  assert.plan(1);
+  let c = new Cache ({buffer:1, initial: {
+    'a': 'aValue',
+    'b': 'bValue'
+  }});
+  c.getRequests.subscribe(() => assert.fail('missing keys were emitted despite both "a" and "b" being present in the cache'));
+  let emits = 0;
+  let obs = c.get({'a': 'myA', 'b': 'myB'});
+  obs.subscribe((value) => {
+    emits++;
+    if (i===1) {
+      assert.deepEquals(value.toJS(), {'myA': 'aValue', 'myB': 'bValue'});
+    }
+    else assert.fail('observable emitted too many times');
+  });
 });

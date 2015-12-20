@@ -6,13 +6,8 @@ const Rx = require('rx'),
 module.exports = class Cache {
 
   constructor (options) {
-    this.options = Object.assign({optimistic: true, buffer: 20}, options);
-    if (this.options.initial) {
-      this.updates = new Rx.BehaviorSubject(Im.fromJS(initial));
-    }
-    else {
-      this.updates = new Rx.Subject();
-    }
+    this.options = Object.assign({optimistic: true, buffer: 20, initial: {}}, options);
+    this.updates = new Rx.BehaviorSubject(Im.fromJS(this.options.initial));
     this._setReqSubject = new Rx.Subject(),
     this._getReqSubject = new Rx.Subject();
     this.asObservable =
@@ -21,9 +16,7 @@ module.exports = class Cache {
         (state, operation) => {
           console.log(state, operation);
           return operation(state);
-        },
-        Im.Map())
-      .startWith(Im.Map())
+        })
       .shareReplay(1);
   }
 
