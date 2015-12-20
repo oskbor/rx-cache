@@ -67,7 +67,12 @@ module.exports = class Cache {
   }
   get setRequests () {
     if(this.options.buffer) {
-      return this._setReqSubject.buffer(() => this._setReqSubject.debounce(this.options.buffer));
+      return this._setReqSubject
+      .buffer(() => this._setReqSubject.debounce(this.options.buffer))
+      .map(arr => {
+        return Im.Map().withMutations(
+          m => arr.map(i => m.mergeDeep(i)));
+      });
     }
     else return this._setReqSubject;
   }

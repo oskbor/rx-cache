@@ -40,7 +40,7 @@ test('get: should not emit any missing keys if they are already in the cache', f
     'a': 'aValue',
     'b': 'bValue'
   }});
-  c.getRequests.subscribe(() => assert.fail('missing keys were emitted despite both "a" and "b" being present in the cache'));
+  c.getRequests.subscribe(() => assert.fail('missing keys were emitted despite being present in the cache'));
   let emits = 0;
   let obs = c.get({'a': 'myA', 'b': 'myB'});
   obs.subscribe((value) => {
@@ -79,12 +79,11 @@ test('get: should emit when all keys are available', function (assert) {
 
 test('setRequests: should buffer bursts of set requests', function (assert) {
   assert.plan(2);
-  var c = new Cache({buffer:1});
+  var c = new Cache({buffer: 1}); // Debounces for 1 ms, then emits
   let emits = 0;
   c.setRequests.subscribe((value) =>
   {
     emits++;
-    console.log(value);
     if (emits === 1) {
       assert.deepEquals(
         value.toJS(), {'a' : 'newestA', 'b': 'newB', 'c' : 'newC'},
@@ -94,7 +93,7 @@ test('setRequests: should buffer bursts of set requests', function (assert) {
     else if (emits === 2) {
       assert.deepEquals(
         value.toJS(), {'d': 'newD', 'e': 'newE'},
-        'set calls are merged the 2:nd time'
+        'set calls that are late are sent separately'
       );
     }
     else assert.fail('stream emitted too many times');
