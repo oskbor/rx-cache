@@ -28,12 +28,12 @@ module.exports = class Cache {
   }
 
   get (requestedMap) {
-    let keys = Im.fromJS(Object.keys(requestedMap).map(key => key.split('.')));
+    let keys = Im.fromJS(Object.keys(requestedMap));
 
     this.asObservable.take(1).subscribe((state) => {
       let missingKeys = Im.List();
       for (let i = 0; i < keys.size; i++) {
-        if (!state.hasIn(keys.get(i))) {
+        if (!state.hasIn(keys.get(i).split('.'))) {
           //TODO: modify in transaction
           missingKeys = missingKeys.push(keys.get(i));
         }
