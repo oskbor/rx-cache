@@ -14,7 +14,6 @@ module.exports = class Cache {
       this.updates
       .scan(
         (state, operation) => {
-          console.log(state, operation);
           return operation(state);
         })
       .shareReplay(1);
@@ -36,26 +35,26 @@ module.exports = class Cache {
       }
     });
     // find out if all keys are in the cache
-    return this.asObservable.filter(
-      (state) => {
-        for (let i = 0; i < keys.size; i++) {
-          if (!state.hasIn(keys.get(i).split('.'))) {
-            return false; // All keys not available yet
-          }
+    return this.asObservable
+    .distinctUntilChanged()
+    .filter((state) => {
+      for (let i = 0; i < keys.size; i++) {
+        if (!state.hasIn(keys.get(i).split('.'))) {
+          return false; // All keys not available yet
         }
-        return true;
       }
-    ).map((state) => {
+      return true;
+    })
+    .map((state) => {
       // This function only fires when all keys are in the cache (because of filter)
       // return an object as described in the requestedMap
-      return Im.Map().withMutations(
-        (map) => {
-          keys.map(key => {
-            let cacheValue = state.getIn(key.split('.'));
-            map.setIn(requestedMap[key].split('.'), cacheValue);
-          });
+      return Im.Map().withMutations((map) => {
+        keys.map(key => {
+          let cacheValue = state.getIn(key.split('.'));
+          map.setIn(requestedMap[key].split('.'), cacheValue);
         });
       });
+    });
   }
 
   set (setMap) {
