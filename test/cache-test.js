@@ -99,8 +99,8 @@ test('setRequests: should buffer bursts of set requests', function (assert) {
     else assert.fail('stream emitted too many times');
 
   });
-  c.set({'a':'wrongA'});
-  c.set({'b': 'newB', 'c': 'newC', 'a': 'newestA'});
+  c.set({'a':'wrongA', 'b': 'newB'});
+  c.set({'c': 'newC', 'a': 'newestA'});
   setTimeout(() => {
     c.set({'d':'newD', 'e': 'newE'});
   }, 3);
