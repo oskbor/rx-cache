@@ -38,9 +38,9 @@ module.exports = class Cache {
     // find out if all keys are in the cache
     return this.asObservable.filter(
       (state) => {
-        for (let key in keys) {
-          if (!state.hasIn(key)) {
-            return false; //Still haven't all keys in the cache
+        for (let i = 0; i < keys.size; i++) {
+          if (!state.hasIn(keys.get(i).split('.'))) {
+            return false; // All keys not available yet
           }
         }
         return true;
@@ -55,7 +55,7 @@ module.exports = class Cache {
             map.setIn(requestedMap[key].split('.'), cacheValue);
           });
         });
-      }).publish();
+      });
   }
 
   set (setMap) {

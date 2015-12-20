@@ -45,8 +45,10 @@ test('Cache: should not emit any missing keys if they are already in the cache',
   let obs = c.get({'a': 'myA', 'b': 'myB'});
   obs.subscribe((value) => {
     emits++;
-    if (i===1) {
-      assert.deepEquals(value.toJS(), {'myA': 'aValue', 'myB': 'bValue'});
+    if (emits===1) {
+      assert.deepEquals(value.toJS(), {'myA': 'aValue', 'myB': 'bValue'},
+        'should emit an object matching the requested object'
+        );
     }
     else assert.fail('observable emitted too many times');
   });
