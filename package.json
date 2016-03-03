@@ -4,7 +4,9 @@
   "description": "cache all the things",
   "main": "index.js",
   "scripts": {
-    "test": "node test/cache-test.js | node_modules/.bin/tap-spec || true"
+    "test": "node test/cache-test.js | tap-spec || true",
+    "lint": "standard || true",
+    "format": "standard-format -w"
   },
   "author": "Oskar Börjesson",
   "license": "MIT",
@@ -13,6 +15,8 @@
     "rx": "^4.0.7"
   },
   "devDependencies": {
+    "standard": "^6.0.7",
+    "standard-format": "^2.1.1",
     "tap-spec": "^4.1.1",
     "tape": "^4.2.2"
   }
