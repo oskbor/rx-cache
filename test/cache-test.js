@@ -4,7 +4,8 @@ const test = require('tape'),
 
 test('getRequests: should buffer bursts of get requests', function (assert) {
   assert.plan(2);
-  var c = new Cache({buffer:1});
+  let buffer_time = 1; //1 ms
+  var c = new Cache({buffer: buffer_time});
   let emits = 0;
   c.getRequests.subscribe((value) =>
   {

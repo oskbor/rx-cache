@@ -3,26 +3,23 @@ const Rx = require('rx'),
       Im = require('immutable'),
       keyIn = require('./helpers/keyIn');
 
-module.exports = class Cache {
+module.exports = function Cache (options) {
 
-  constructor (options) {
-    this.options = Object.assign({optimistic: true, buffer: 20, initial: {}}, options);
-    this.updates = new Rx.BehaviorSubject(Im.fromJS(this.options.initial));
-    this._setReqSubject = new Rx.Subject(),
-    this._getReqSubject = new Rx.Subject();
-    this.asObservable =
-      this.updates
-      .scan(
-        (state, operation) => {
-          return operation(state);
-        })
-      .shareReplay(1);
-  }
+  options = Object.assign({optimistic: true, buffer: 20, initial: {}}, options);
+  let updates = new Rx.BehaviorSubject(Im.fromJS(options.initial)),
+      _setReqSubject = new Rx.Subject(),
+      _getReqSubject = new Rx.Subject();
+  let asObservable = updates.scan(
+      (state, operation) => {
+        return operation(state);
+      })
+    .shareReplay(1);
 
-  get (requestedMap) {
+
+  let get = function get (requestedMap) {
     let keys = Im.fromJS(Object.keys(requestedMap));
 
-    this.asObservable.take(1).subscribe((state) => {
+    asObservable.take(1).subscribe((state) => {
       let missingKeys = Im.List();
       for (let i = 0; i < keys.size; i++) {
         if (!state.hasIn(keys.get(i).split('.'))) {
@@ -31,11 +28,11 @@ module.exports = class Cache {
         }
       }
       if (missingKeys.size > 0) {
-        this._getReqSubject.onNext(missingKeys);
+        _getReqSubject.onNext(missingKeys);
       }
     });
     // find out if all keys are in the cache
-    return this.asObservable
+    return asObservable
     .distinctUntilChanged()
     .filter((state) => {
       for (let i = 0; i < keys.size; i++) {
@@ -57,37 +54,41 @@ module.exports = class Cache {
     });
   }
 
-  set (setMap) {
-    this._setReqSubject.onNext(setMap);
-    if (this.options.optimistic) {
-      this.updates.onNext(
+  function set (setMap) {
+    _setReqSubject.onNext(setMap);
+    if (options.optimistic) {
+      updates.onNext(
         (state) => state.mergeDeep(setMap)
       );
     }
   }
-  get setRequests () {
-    if(this.options.buffer) {
-      return this._setReqSubject
-      .buffer(() => this._setReqSubject.debounce(this.options.buffer))
-      .map(arr => {
-        return Im.Map().withMutations(
-          m => arr.map(i => m.mergeDeep(i)));
-      });
+  return {
+    set: set,
+    get: get,
+    get setRequests () {
+      if(options.buffer) {
+        return _setReqSubject
+        .buffer(() => _setReqSubject.debounce(options.buffer))
+        .map(arr => {
+          return Im.Map().withMutations(
+            m => arr.map(i => m.mergeDeep(i)));
+        });
+      }
+      else return _setReqSubject;
+    },
+    get getRequests () {
+      if(options.buffer) {
+        return _getReqSubject
+        .buffer(() => _getReqSubject.debounce(options.buffer))
+        .map(arr => {
+          return Im.Set().withMutations(
+            s => arr.map(i => s.union(i))
+          );
+        });
+        ;
+      }
+      else return _getReqSubject;
     }
-    else return this._setReqSubject;
-  }
-  get getRequests () {
-    if(this.options.buffer) {
-      return this._getReqSubject
-      .buffer(() => this._getReqSubject.debounce(this.options.buffer))
-      .map(arr => {
-        return Im.Set().withMutations(
-          s => arr.map(i => s.union(i))
-        );
-      });
-      ;
-    }
-    else return this._getReqSubject;
   }
 }
 
