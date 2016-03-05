@@ -42,3 +42,24 @@ test('get: should emit when all keys are available', function (assert) {
     } else assert.fail('observable emitted too many times')
   })
 })
+
+test('get: should return the set value', function(assert) {
+  assert.plan(1)
+  let c = new Cache()
+  c.set({'a': 'value'})
+  setTimeout(() => {c.get({'a': 'a'}).subscribe((val) => {
+    assert.deepEquals(val.toJS(), {'a': 'value'})
+  })}, 1)
+})
+
+test('get: should return the latest set value', function(assert) {
+  assert.plan(1)
+  let c = new Cache()
+  c.set({'a': '1'})
+  c.set({'a': '2'})
+  c.set({'a': '3'})
+  c.set({'a': 'latest'})
+  setTimeout(() => {c.get({'a': 'a'}).subscribe((val) => {
+    assert.deepEquals(val.toJS(), {'a': 'latest'})
+  })}, 1)
+})

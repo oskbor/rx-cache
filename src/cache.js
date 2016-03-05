@@ -7,16 +7,14 @@ module.exports = function Cache (options) {
   // TODO: Immutable record as options object
   options = Object.assign({buffer: 20, initial: {}}, options)
 
-  let updates = new Rx.BehaviorSubject(Im.fromJS(options.initial))
+  let updates = new Rx.ReplaySubject(1)
   let serverSet$ = new Rx.Subject()
   let serverGet$ = new Rx.Subject()
-  let state$ = updates.scan(
+  let state$ = updates.startWith((s) => s).scan(
     (state, operation) => {
       return operation(state)
-    })
-    .distinctUntilChanged()
+    }, Im.fromJS(options.initial))
     .shareReplay(1)
-
   function set (setMap) {
     serverSet$.onNext(setMap)
     updates.onNext((state) => state.mergeDeep(setMap))

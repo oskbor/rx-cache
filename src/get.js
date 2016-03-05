@@ -22,9 +22,8 @@ module.exports = function (state$, getRequests) {
     // find out if all keys are in the cache
     return state$
       .filter(allKeysInCache(keys))
-      .distinctUntilChanged()
+      .distinctUntilChanged() // Filter out unrelated changes
       .map((state) => {
-        // This function only fires when all keys are in the cache (because of filter)
         // return an object as described in the requestedMap
         return Im.Map().withMutations((map) => {
           keys.map((key) => {

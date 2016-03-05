@@ -6,7 +6,8 @@
   "scripts": {
     "test": "node test/index.js | tap-spec || true",
     "lint": "standard || true",
-    "format": "standard-format -w"
+    "format": "standard-format -w",
+    "build": "browserify src/cache.js -o bundle.js --s RxCache"
   },
   "author": "Oskar Börjesson",
   "license": "MIT",
