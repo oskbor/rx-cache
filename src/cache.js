@@ -4,47 +4,46 @@ const Im = require('immutable')
 const getBuilder = require('./get')
 
 module.exports = function Cache (options) {
-  options = Object.assign({optimistic: true, buffer: 20, initial: {}}, options)
+  // TODO: Immutable record as options object
+  options = Object.assign({buffer: 20, initial: {}}, options)
+
   let updates = new Rx.BehaviorSubject(Im.fromJS(options.initial))
-  let _setReqSubject = new Rx.Subject()
-  let _getReqSubject = new Rx.Subject()
+  let serverSet$ = new Rx.Subject()
+  let serverGet$ = new Rx.Subject()
   let state$ = updates.scan(
     (state, operation) => {
       return operation(state)
     })
+    .distinctUntilChanged()
     .shareReplay(1)
 
   function set (setMap) {
-    _setReqSubject.onNext(setMap)
-    if (options.optimistic) {
-      updates.onNext(
-        (state) => state.mergeDeep(setMap)
-      )
-    }
+    serverSet$.onNext(setMap)
+    updates.onNext((state) => state.mergeDeep(setMap))
   }
   return {
     set: set,
-    get: getBuilder(state$, _getReqSubject),
+    get: getBuilder(state$, serverGet$),
     get setRequests () {
       if (options.buffer) {
-        return _setReqSubject
-          .buffer(() => _setReqSubject.debounce(options.buffer))
+        return serverSet$
+          .buffer(() => serverSet$.debounce(options.buffer))
           .map((arr) => {
             return Im.Map().withMutations(
               (m) => arr.map((i) => m.mergeDeep(i)))
           })
-      } else return _setReqSubject
+      } else return serverSet$
     },
     get getRequests () {
       if (options.buffer) {
-        return _getReqSubject
-          .buffer(() => _getReqSubject.debounce(options.buffer))
+        return serverGet$
+          .buffer(() => serverGet$.debounce(options.buffer))
           .map((arr) => {
             return Im.Set().withMutations(
               (s) => arr.map((i) => s.union(i))
             )
           })
-      } else return _getReqSubject
+      } else return serverGet$
     }
   }
 }
