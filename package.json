@@ -4,7 +4,7 @@
   "description": "cache all the things",
   "main": "index.js",
   "scripts": {
-    "test": "node test/cache-test.js | tap-spec || true",
+    "test": "node test/index.js | tap-spec || true",
     "lint": "standard || true",
     "format": "standard-format -w"
   },
